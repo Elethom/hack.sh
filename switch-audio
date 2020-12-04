@@ -1,0 +1,12 @@
+#!/bin/sh
+
+external_output="DisplayPort"
+external_input="HD Webcam C525"
+
+if [ "$(SwitchAudioSource -c -t output)" == "Built-in Output" ]; then
+    SwitchAudioSource -t output -s "$external_output"
+    SwitchAudioSource -t input -s "$external_input"
+else
+    SwitchAudioSource -t output -s "Built-in Output"
+    SwitchAudioSource -t input -s "Built-in Input"
+fi
