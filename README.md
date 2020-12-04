@@ -2,6 +2,13 @@
 
 Scripts for advanced macOS users.
 
+## Install
+
+```shell
+$ git clone https://github.com/Elethom/hack.sh.git /usr/local/opt/hack.sh
+$ echo 'export PATH="/usr/local/opt/hack.sh:$PATH"' >> ~/.bash_profile
+```
+
 ## Scripts
 
 ### mount-efi
