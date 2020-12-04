@@ -1,0 +1,42 @@
+#!/bin/sh
+
+scptid="me.elethom.updatekexts"
+rm -rf /tmp/$scptid
+mkdir -p /tmp/$scptid
+
+ls -1 /Volumes/EFI/EFI/OC/Kexts/*.kext/Contents/Info.plist | while read file
+do
+    filename=$(echo $file | grep -Po "Kexts/\K.*?.kext")
+    name=$(cat $file | grep -Pzo "(?s)CFBundleName.*?<string>\K(.*?)(?=</string>)")
+    version=$(cat $file | grep -Pzo "(?s)CFBundleVersion.*?<string>\K(.*?)(?=</string>)")
+    case "$name" in
+        "AppleALC") path="acidanthera/AppleALC"
+            ;;
+        "IntelMausi") path="acidanthera/IntelMausi"
+            ;;
+        "Lilu") path="acidanthera/Lilu"
+            ;;
+        "NVMeFix") path="acidanthera/NVMeFix"
+            ;;
+        "VirtualSMC") path="acidanthera/VirtualSMC"
+            ;;
+        "WhateverGreen") path="acidanthera/WhateverGreen"
+            ;;
+        *) continue
+            ;;
+    esac
+    latest=$(curl --silent "https://api.github.com/repos/$path/releases/latest" | grep -Po '"tag_name": *"\K.*?(?=")')
+    if [ "$version" != "$latest" ]; then
+        if [ ! -f "/tmp/$scptid/$name$latest.zip" ]; then
+            download=$(curl --silent "https://api.github.com/repos/$path/releases/latest" | grep -Po '"browser_download_url": *"\K((?!DEBUG).)*?(?=")')
+            curl -L "$download" > "/tmp/$scptid/$name$latest.zip"
+        fi
+        bsdtar -C /tmp/$scptid/ -xf "/tmp/$scptid/$name$latest.zip" "**.kext"
+        echo "$name\t$(tput tbc; tput hts)$version > $latest"
+    else
+        echo "$name\t$(tput tbc; tput hts)$version is latest"
+    fi
+done
+
+cp -r /tmp/$scptid/**/*.kext /Volumes/EFI/EFI/OC/Kexts/
+echo "All kexts updated!"
