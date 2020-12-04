@@ -1,0 +1,3 @@
+#!/bin/sh
+
+sudo diskutil mount $(diskutil list | grep -Po "Container $(df | grep -Po 'disk\d(?=.*?/$)').*?\Kdisk\d(?=s\d$)")s1
