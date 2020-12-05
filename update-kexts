@@ -1,14 +1,16 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 scptid="me.elethom.updatekexts"
 rm -rf /tmp/$scptid
 mkdir -p /tmp/$scptid
 
-ls -1 /Volumes/EFI/EFI/OC/Kexts/*.kext/Contents/Info.plist | while read file
+shopt -s globstar # **
+
+for file in /Volumes/EFI/EFI/OC/Kexts/*.kext/Contents/Info.plist
 do
-    filename=$(echo $file | grep -Po "Kexts/\K.*?.kext")
-    name=$(cat $file | grep -Pzo "(?s)CFBundleName.*?<string>\K(.*?)(?=</string>)")
-    version=$(cat $file | grep -Pzo "(?s)CFBundleVersion.*?<string>\K(.*?)(?=</string>)")
+    filename=$(echo "$file" | grep -Po "Kexts/\K.*?.kext")
+    name=$(grep -Pzo "(?s)CFBundleName.*?<string>\K(.*?)(?=</string>)" "$file")
+    version=$(grep -Pzo "(?s)CFBundleVersion.*?<string>\K(.*?)(?=</string>)" "$file")
     case "$name" in
         "AppleALC") path="acidanthera/AppleALC"
             ;;
