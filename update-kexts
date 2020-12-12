@@ -1,16 +1,35 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
 scptid="me.elethom.updatekexts"
 rm -rf /tmp/$scptid
 mkdir -p /tmp/$scptid
 
-shopt -s globstar # **
+shopt -s globstar  # **
+trap 'tabs -8' EXIT INT TERM  # restore tab
 
+# calculate max length for tabs :(
+maxlength=0
+for file in /Volumes/EFI/EFI/OC/Kexts/*.kext
+do
+    name=${file##*/}  # lazy-ass basename
+    name=${name%.kext}
+    len=${#name}
+    ((maxlength = maxlength > len ? maxlength : len))
+done
+((tabpos = ((maxlength + 6) / 8) * 8))  # sorry maths teacher
+
+tput sc   # save cursor
+tput cup 0 "$tabpos"
+tput tbc  # remove all tabs
+tput hts  # only tabstop is at tabpos
+tput rc   # restore cursor
+
+new=0
 for file in /Volumes/EFI/EFI/OC/Kexts/*.kext/Contents/Info.plist
 do
     filename=$(echo "$file" | grep -Po "Kexts/\K.*?.kext")
-    name=$(grep -Pzo "(?s)CFBundleName.*?<string>\K(.*?)(?=</string>)" "$file")
-    version=$(grep -Pzo "(?s)CFBundleVersion.*?<string>\K(.*?)(?=</string>)" "$file")
+    name=$(grep -Pzo "(?s)CFBundleName.*?<string>\K(.*?)(?=</string>)" "$file" | tr -d '\0')
+    version=$(grep -Pzo "(?s)CFBundleVersion.*?<string>\K(.*?)(?=</string>)" "$file" | tr -d '\0')
     case "$name" in
         "AppleALC") path="acidanthera/AppleALC"
             ;;
@@ -34,11 +53,14 @@ do
             curl -L "$download" > "/tmp/$scptid/$name$latest.zip"
         fi
         bsdtar -C /tmp/$scptid/ -xf "/tmp/$scptid/$name$latest.zip" "**.kext"
-        echo "$name\t$(tput tbc; tput hts)$version > $latest"
+        printf "%s\t%s > %s\n" "$name" "$version" "$latest"
+        ((new += 1))
     else
-        echo "$name\t$(tput tbc; tput hts)$version is latest"
+        printf "%s\t%s is latest\n" "$name" "$version"
     fi
 done
 
-cp -r /tmp/$scptid/**/*.kext /Volumes/EFI/EFI/OC/Kexts/
-echo "All kexts updated!"
+if ((new)); then
+    cp -r /tmp/$scptid/**/*.kext /Volumes/EFI/EFI/OC/Kexts/
+fi
+echo "All kexts up-to-date!"
